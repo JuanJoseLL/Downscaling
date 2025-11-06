@@ -111,46 +111,46 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     subgraph Input["FUENTES DE DATOS SATELITALES"]
-        A1[CHIRPS<br/>5.5km diarios]
-        A2[Copernicus C3S<br/>11km diarios]
-        A3[MODIS GEE<br/>500m diarios]
-        A4[MSWEP<br/>10km diarios]
-        A5[DEM<br/>1km estático]
+        A1["CHIRPS<br/>5.5km diarios"]
+        A2["Copernicus C3S<br/>11km diarios"]
+        A3["MODIS GEE<br/>500m diarios"]
+        A4["MSWEP<br/>10km diarios"]
+        A5["DEM<br/>1km estatico"]
     end
 
     subgraph Stage1["ETAPA 1: PREPROCESAMIENTO"]
-        B1[Agregación Temporal<br/>→ Semanas Epidemiológicas]
-        B2[Control de Calidad<br/>Filtros + Interpolación]
-        B3[NetCDF Semanales<br/>610 semanas<br/>2013-2025]
+        B1["Agregacion Temporal<br/>a Semanas Epidemiologicas"]
+        B2["Control de Calidad<br/>Filtros + Interpolacion"]
+        B3["NetCDF Semanales<br/>610 semanas<br/>2013-2025"]
     end
 
     subgraph Stage2["ETAPA 2: FEATURE ENGINEERING"]
-        C1[Variables Topográficas<br/>Slope, Aspect, TPI,<br/>Rugosity, Distancias]
-        C2[Downscaling Físico<br/>SAGA Lapse Rate<br/>-6.5°C/km]
-        C3[Reproyección NDVI/NDWI<br/>500m → 1km]
-        C4[Variables Temporales<br/>sin/cos semanales]
-        C5[Extracción en Estaciones<br/>5 sitios × 610 semanas]
-        C6[Features .parquet<br/>1,420-9,823 filas]
+        C1["Variables Topograficas<br/>Slope, Aspect, TPI,<br/>Rugosity, Distancias"]
+        C2["Downscaling Fisico<br/>SAGA Lapse Rate<br/>-6.5 grados C por km"]
+        C3["Reproyeccion NDVI/NDWI<br/>500m a 1km"]
+        C4["Variables Temporales<br/>sin/cos semanales"]
+        C5["Extraccion en Estaciones<br/>5 sitios por 610 semanas"]
+        C6["Features .parquet<br/>1,420-9,823 filas"]
     end
 
     subgraph Stage3["ETAPA 3: MODELADO ML"]
-        D1[Baseline Lineal<br/>Grid Search<br/>Polinomial Grado 2]
-        D2[XGBoost Optimización<br/>Optuna 100 trials<br/>Bayesian Search]
-        D3[Validación CV<br/>Temporal/Espaciotemporal<br/>LOSO + Bloques]
-        D4[Modelos .joblib<br/>242KB - 1.1MB]
+        D1["Baseline Lineal<br/>Grid Search<br/>Polinomial Grado 2"]
+        D2["XGBoost Optimizacion<br/>Optuna 100 trials<br/>Bayesian Search"]
+        D3["Validacion CV<br/>Temporal/Espaciotemporal<br/>LOSO + Bloques"]
+        D4["Modelos .joblib<br/>242KB - 1.1MB"]
     end
 
-    subgraph Stage4["ETAPA 4: PREDICCIÓN ESPACIAL"]
-        E1[Grilla Completa 1km<br/>Malla Alineada]
-        E2[Clipping Geográfico<br/>Shapefiles Regionales]
-        E3[Predicción Píxel-a-Píxel<br/>610 semanas]
-        E4[Mapas NetCDF 4D<br/>epi_week × y × x]
+    subgraph Stage4["ETAPA 4: PREDICCION ESPACIAL"]
+        E1["Grilla Completa 1km<br/>Malla Alineada"]
+        E2["Clipping Geografico<br/>Shapefiles Regionales"]
+        E3["Prediccion Pixel-a-Pixel<br/>610 semanas"]
+        E4["Mapas NetCDF 4D<br/>epi_week por y por x"]
     end
 
     subgraph Output["SALIDAS"]
-        F1[Mapas 1km<br/>Tmax/Tmin/Precip]
-        F2[Visualizaciones<br/>Cartopy + Matplotlib]
-        F3[Métricas<br/>RMSE: ~1°C temp<br/>~26mm precip]
+        F1["Mapas 1km<br/>Tmax/Tmin/Precip"]
+        F2["Visualizaciones<br/>Cartopy + Matplotlib"]
+        F3["Metricas<br/>RMSE aprox 1 grado temp<br/>aprox 26mm precip"]
     end
 
     A1 & A2 & A3 & A4 --> B1
@@ -185,12 +185,12 @@ flowchart TD
 
 ```mermaid
 graph TD
-    subgraph Temperatura["MODELO TEMPERATURA (Tmax/Tmin)"]
-        T1[Features: 7 variables<br/>aspect, ndvi, slope,<br/>tmax_saga, tmin_saga,<br/>valle, week_sin]
-        T2[XGBoost Regressor<br/>n_estimators: 259<br/>max_depth: 3<br/>learning_rate: 0.034]
-        T3[Sample Weighting<br/>w = 1 + ((T-μ)/σ)²]
-        T4[CV Temporal<br/>Bloques 5 semanas]
-        T5[Output: Tmax/Tmin 1km<br/>RMSE: ~1°C<br/>Pearson: 0.91]
+    subgraph Temperatura["MODELO TEMPERATURA Tmax y Tmin"]
+        T1["Features: 7 variables<br/>aspect, ndvi, slope,<br/>tmax_saga, tmin_saga,<br/>valle, week_sin"]
+        T2["XGBoost Regressor<br/>n_estimators: 259<br/>max_depth: 3<br/>learning_rate: 0.034"]
+        T3["Sample Weighting<br/>w = 1 + normalized_squared"]
+        T4["CV Temporal<br/>Bloques 5 semanas"]
+        T5["Output: Tmax y Tmin 1km<br/>RMSE aprox 1 grado C<br/>Pearson: 0.91"]
 
         T1 --> T2
         T3 --> T2
@@ -198,11 +198,11 @@ graph TD
         T4 --> T5
     end
 
-    subgraph Precipitacion["MODELO PRECIPITACIÓN"]
-        P1[Features: 8 variables<br/>Latitud, mswep_1km,<br/>mswep_dem, ndvi, ndwi,<br/>tmax_saga, tmin_saga, week_sin]
-        P2[XGBoost Tweedie<br/>n_estimators: 517<br/>max_depth: 5<br/>learning_rate: 0.048<br/>tweedie_variance: 1.87]
-        P3[CV Espaciotemporal<br/>LOSO + Bloques 26 semanas<br/>Paralelo: 56 workers]
-        P4[Output: Precipitación 1km<br/>RMSE: ~26mm<br/>Pearson: 0.77]
+    subgraph Precipitacion["MODELO PRECIPITACION"]
+        P1["Features: 8 variables<br/>Latitud, mswep_1km,<br/>mswep_dem, ndvi, ndwi,<br/>tmax_saga, tmin_saga, week_sin"]
+        P2["XGBoost Tweedie<br/>n_estimators: 517<br/>max_depth: 5<br/>learning_rate: 0.048<br/>tweedie_variance: 1.87"]
+        P3["CV Espaciotemporal<br/>LOSO + Bloques 26 semanas<br/>Paralelo: 56 workers"]
+        P4["Output: Precipitacion 1km<br/>RMSE aprox 26mm<br/>Pearson: 0.77"]
 
         P1 --> P2
         P2 --> P3
@@ -255,22 +255,23 @@ gantt
 
 ```mermaid
 graph LR
-    subgraph Validación["ESTRATEGIA DE VALIDACIÓN"]
-        V1[Temperatura<br/>Leave-5-Weeks-Out<br/>Temporal CV]
-        V2[Precipitación<br/>LOSO Espacial +<br/>26-Weeks Temporal]
+    subgraph Validacion["ESTRATEGIA DE VALIDACION"]
+        V1["Temperatura<br/>Leave-5-Weeks-Out<br/>Temporal CV"]
+        V2["Precipitacion<br/>LOSO Espacial +<br/>26-Weeks Temporal"]
 
-        V1 --> M1[Métricas<br/>RMSE, Pearson r,<br/>Bias, Var Ratio]
+        V1 --> M1["Metricas<br/>RMSE, Pearson r,<br/>Bias, Var Ratio"]
         V2 --> M1
     end
 
-    subgraph Resultados["RESULTADOS POR ESTACIÓN"]
-        R1[Cañaveralejo<br/>SAGA: RMSE 6.3°C<br/>XGBoost: RMSE 1.0°C<br/>Mejora: 84%]
-        R2[Villanueva<br/>MSWEP: RMSE 30.8mm<br/>XGBoost: RMSE 16.1mm<br/>Mejora: 48%]
+    subgraph Resultados["RESULTADOS POR ESTACION"]
+        R1["Canaveralejo<br/>SAGA: RMSE 6.3 grados<br/>XGBoost: RMSE 1.0 grados<br/>Mejora: 84%"]
+        R2["Villanueva<br/>MSWEP: RMSE 30.8mm<br/>XGBoost: RMSE 16.1mm<br/>Mejora: 48%"]
     end
 
-    M1 --> R1 & R2
+    M1 --> R1
+    M1 --> R2
 
-    style Validación fill:#e8f5e9
+    style Validacion fill:#e8f5e9
     style Resultados fill:#fff9c4
 ```
 
